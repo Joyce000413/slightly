@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slightly — Flower &amp; Fruit Tea</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Inter:wght@200;300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── mood overlay ── */
+    .mood-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+      padding: 40px 24px;
+    }
+    .mood-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .mood-overlay-bg {
+      position: absolute;
+      inset: 0;
+      transition: background 0.6s ease;
+    }
+
+    .mood-overlay-card {
+      position: relative;
+      max-width: 520px;
+      width: 100%;
+      background: var(--canvas);
+      padding: 60px 48px 48px;
+      border: 1px solid var(--line);
+      transform: translateY(30px) scale(0.98);
+      transition: transform 0.5s cubic-bezier(0.25,0.1,0.1,1);
+      text-align: center;
+    }
+    .mood-overlay.active .mood-overlay-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .mood-overlay-card::before {
+      content: '';
+      position: absolute;
+      top: 12px; left: 12px;
+      right: 12px; bottom: 12px;
+      border: 1px solid var(--line-light);
+      pointer-events: none;
+    }
+
+    .mood-overlay-close {
+      position: absolute;
+      top: 18px;
+      right: 22px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      line-height: 1;
+      transition: color 0.2s;
+      font-family: var(--font-sans);
+    }
+    .mood-overlay-close:hover { color: var(--text); }
+
+    .mood-overlay-swatch {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .mood-overlay-name {
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .mood-overlay-hex {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .mood-overlay-tag {
+      display: inline-block;
+      font-size: 11px;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      background: var(--canvas-alt);
+      padding: 4px 14px;
+      margin-bottom: 28px;
+    }
+
+    .mood-overlay-quote {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 18px;
+      line-height: 1.9;
+      color: var(--text);
+      margin-bottom: 24px;
+      padding: 0 8px;
+    }
+
+    .mood-overlay-recipe {
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding-top: 20px;
+      border-top: 1px solid var(--line-light);
+      margin-bottom: 28px;
+      font-weight: 300;
+    }
+
+    .mood-overlay-apply {
+      display: inline-block;
+      font-size: 10px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text);
+      text-decoration: none;
+      padding: 10px 32px;
+      border: 1px solid var(--line);
+      background: transparent;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: all 0.3s ease;
+    }
+    .mood-overlay-apply:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    @media (max-width: 480px) {
+      .mood-overlay-card { padding: 44px 28px 36px; }
+      .mood-overlay-quote { font-size: 16px; }
+    }
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    :root {
+      --canvas: #F0E8D8;
+      --canvas-alt: #F5EDE0;
+      --text: #2C2420;
+      --text-secondary: #6B5344;
+      --text-muted: #9A8A7A;
+      --accent: #C47A5A;
+      --accent-soft: rgba(196,122,90,0.1);
+      --line: #D6C8B4;
+      --line-light: #E4D8C6;
+
+      --peach: #D48A5A;
+      --pear: #D4C4A8;
+      --rose: #C48A96;
+      --jasmine: #D4C06A;
+      --hawthorn: #B86054;
+      --ginger: #9A7054;
+      --mint: #8AA88A;
+      --violet: #B890B8;
+
+      --font-sans: 'Inter', -apple-system, 'Helvetica Neue', sans-serif;
+      --font-serif: 'Playfair Display', Georgia, serif;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--canvas);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-weight: 300;
+      font-size: 15px;
+    }
+
+    ::selection { background: var(--accent-soft); color: var(--text); }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 36px;
+    }
+    @media (max-width: 768px) { .container { padding: 0 24px; } }
+
+    section { padding: 150px 0; }
+    @media (max-width: 768px) { section { padding: 90px 0; } }
+
+    /* ── reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.25,0.1,0.1,1), transform 0.8s cubic-bezier(0.25,0.1,0.1,1);
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .r1 { transition-delay: 0.05s; }
+    .r2 { transition-delay: 0.12s; }
+    .r3 { transition-delay: 0.20s; }
+    .r4 { transition-delay: 0.28s; }
+
+    /* ── section header ── */
+    .section-header {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      margin-bottom: 80px;
+      align-items: end;
+    }
+    @media (max-width: 768px) {
+      .section-header { grid-template-columns: 1fr; gap: 16px; margin-bottom: 48px; }
+    }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 400;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      font-family: var(--font-sans);
+      font-size: clamp(26px, 3.2vw, 40px);
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+      color: var(--text);
+    }
+
+    .section-desc {
+      font-size: clamp(14px, 1.4vw, 18px);
+      font-weight: 300;
+      color: var(--text-secondary);
+      line-height: 1.75;
+      max-width: 420px;
+      justify-self: end;
+    }
+    @media (max-width: 768px) { .section-desc { justify-self: start; } }
+
+    /* ── icon ── */
+    .icon-svg {
+      width: 44px;
+      height: 44px;
+      stroke: var(--accent);
+      stroke-width: 0.7;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.55;
+      flex-shrink: 0;
+    }
+    .icon-svg-sm { width: 34px; height: 34px; }
+    .icon-svg-lg { width: 54px; height: 54px; }
+
+    /* ═══════════════════════════════
+       HERO
+    ═══════════════════════════════ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px 36px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 25% 20%, rgba(196,122,90,0.05) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 80%, rgba(196,169,114,0.04) 0%, transparent 50%);
+    }
+
+    /* drifting orbs — 方案五氛围 */
+    .hero-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.5;
+    }
+    .hero-orb--1 {
+      width: 480px;
+      height: 480px;
+      background: rgba(196,122,90,0.06);
+      top: -120px;
+      right: -80px;
+      animation: orbFloat1 24s ease-in-out infinite;
+    }
+    .hero-orb--2 {
+      width: 420px;
+      height: 420px;
+      background: rgba(196,169,114,0.05);
+      bottom: -100px;
+      left: -60px;
+      animation: orbFloat2 28s ease-in-out infinite;
+    }
+    .hero-orb--3 {
+      width: 300px;
+      height: 300px;
+      background: rgba(212,138,90,0.04);
+      top: 40%;
+      left: 60%;
+      animation: orbFloat3 30s ease-in-out infinite;
+    }
+
+    @keyframes orbFloat1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%      { transform: translate(-40px, 60px) scale(1.08); }
+      66%      { transform: translate(30px, -30px) scale(0.95); }
+    }
+    @keyframes orbFloat2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50%      { transform: translate(50px, -40px) scale(1.06); }
+    }
+    @keyframes orbFloat3 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%      { transform: translate(-20px, -20px) scale(0.97); }
+      66%      { transform: translate(20px, 10px) scale(1.05); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-label {
+      font-size: 10px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+      font-weight: 400;
+    }
+
+    .hero-title {
+      font-family: var(--font-serif);
+      font-weight: 300;
+      font-style: italic;
+      font-size: clamp(72px, 14vw, 160px);
+      letter-spacing: -0.05em;
+      line-height: 0.95;
+      color: var(--text);
+      margin-bottom: 24px;
+      opacity: 0;
+      animation: heroFadeIn 2.4s cubic-bezier(0.25,0.1,0.1,1) forwards;
+    }
+    @keyframes heroFadeIn {
+      0%   { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-tagline {
+      font-size: clamp(16px, 2vw, 24px);
+      font-weight: 300;
+      color: var(--text-secondary);
+      margin-bottom: 48px;
+      letter-spacing: 0.02em;
+      animation: taglinePulse 5s ease-in-out infinite;
+    }
+    @keyframes taglinePulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.65; }
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      font-family: var(--font-sans);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--text);
+      text-decoration: none;
+      padding: 11px 34px;
+      border: 1px solid var(--line);
+      transition: all 0.4s ease;
+      background: transparent;
+    }
+    .hero-cta:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      padding: 11px 42px 11px 34px;
+    }
+    .hero-cta .arrow {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    .hero-cta:hover .arrow { transform: translateX(4px); }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      animation: scrollFade 3s ease-in-out infinite;
+    }
+    @keyframes scrollFade {
+      0%, 100% { opacity: 0.2; transform: translateX(-50%) translateY(0); }
+      50%      { opacity: 0.5; transform: translateX(-50%) translateY(3px); }
+    }
+    .hero-scroll-line {
+      width: 1px;
+      height: 32px;
+      background: linear-gradient(to bottom, var(--text-muted), transparent);
+      animation: scrollGrow 2s ease-in-out infinite;
+    }
+    @keyframes scrollGrow {
+      0%, 100% { transform: scaleY(0.4); opacity: 0.2; }
+      50%      { transform: scaleY(1); opacity: 1; }
+    }
+
+    /* ═══════════════════════════════
+       ABOUT
+    ═══════════════════════════════ */
+    .about { background: var(--canvas-alt); }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 44px;
+    }
+    @media (max-width: 768px) { .about-grid { grid-template-columns: 1fr; gap: 44px; } }
+
+    .about-item {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .about-item h3 {
+      font-family: var(--font-sans);
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .about-item p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    .about-item .icon-wrap {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line-light);
+      border-radius: 100%;
+      transition: border-color 0.3s;
+    }
+    .about-item:hover .icon-wrap { border-color: var(--accent); }
+
+    /* ═══════════════════════════════
+       PALETTE
+    ═══════════════════════════════ */
+    .palette { background: var(--canvas); }
+
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+    @media (max-width: 900px) { .palette-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; } }
+    @media (max-width: 480px) { .palette-grid { grid-template-columns: 1fr; gap: 16px; } }
+
+    .palette-item {
+      cursor: pointer;
+      transition: opacity 0.3s ease;
+    }
+    .palette-item:hover { opacity: 0.7; }
+
+    .palette-swatch {
+      width: 100%;
+      height: 140px;
+      margin-bottom: 16px;
+      transition: transform 0.3s ease;
+    }
+    .palette-item:hover .palette-swatch { transform: scale(1.02); }
+    @media (max-width: 480px) { .palette-swatch { height: 90px; } }
+
+    .palette-name {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 400;
+      margin-bottom: 1px;
+      letter-spacing: 0.5px;
+    }
+
+    .palette-sub {
+      font-size: 12px;
+      font-weight: 300;
+      color: var(--text-muted);
+    }
+
+    /* ═══════════════════════════════
+       PROCESS
+    ═══════════════════════════════ */
+    .process { background: var(--canvas-alt); }
+
+    .process-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 52px;
+    }
+    @media (max-width: 768px) { .process-steps { grid-template-columns: 1fr; gap: 44px; } }
+
+    .process-step {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .process-top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .process-num {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      font-weight: 300;
+    }
+
+    .process-step h3 {
+      font-family: var(--font-sans);
+      font-size: 17px;
+      font-weight: 400;
+    }
+
+    .process-step p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      font-weight: 300;
+    }
+
+    /* ═══════════════════════════════
+       PRODUCTS
+    ═══════════════════════════════ */
+    .products { background: var(--canvas); }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 36px;
+    }
+    @media (max-width: 768px) { .products-grid { grid-template-columns: 1fr; gap: 44px; } }
+
+    .product {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .product-visual {
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line-light);
+      background: var(--canvas-alt);
+      position: relative;
+      overflow: hidden;
+    }
+    .product-visual .icon-svg {
+      width: 58px;
+      height: 58px;
+      transition: transform 0.4s ease;
+    }
+    .product:hover .product-visual .icon-svg { transform: scale(1.06); }
+
+    .product h3 {
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      color: var(--text);
+    }
+
+    .product-prod-sub {
+      font-size: 12px;
+      font-weight: 300;
+      color: var(--text-muted);
+      margin-top: -4px;
+      font-style: italic;
+    }
+
+    .product p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    .product-price {
+      font-family: var(--font-sans);
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+    .product-price small {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--text-muted);
+    }
+
+    .product-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line-light);
+      align-self: flex-start;
+      transition: all 0.3s ease;
+      font-weight: 400;
+    }
+    .product-cta:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      gap: 14px;
+    }
+
+    /* ═══════════════════════════════
+       MOMENT
+    ═══════════════════════════════ */
+    .moment {
+      background: var(--canvas-alt);
+    }
+
+    .moment-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 36px;
+    }
+    @media (max-width: 768px) { .moment-grid { grid-template-columns: 1fr; gap: 28px; } }
+
+    .moment-card {
+      padding: 48px 32px 40px;
+      border: 1px solid var(--line);
+      background: var(--canvas);
+      position: relative;
+      text-align: center;
+    }
+    @media (max-width: 480px) { .moment-card { padding: 36px 24px 32px; } }
+
+    .moment-card::before {
+      content: '';
+      position: absolute;
+      top: 12px; left: 12px;
+      right: 12px; bottom: 12px;
+      border: 1px solid var(--line-light);
+      pointer-events: none;
+    }
+
+    .moment-dot {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin: 0 auto 16px;
+    }
+
+    .moment-flavor {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+
+    .moment-color {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .moment-quote {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+
+    .moment-date {
+      font-size: 9px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line-light);
+    }
+
+    /* ═══════════════════════════════
+       FOOTER
+    ═══════════════════════════════ */
+    footer {
+      padding: 72px 36px 48px;
+      text-align: center;
+      background: var(--canvas);
+    }
+
+    .footer-brand {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      font-style: italic;
+      font-weight: 300;
+      margin-bottom: 24px;
+      letter-spacing: -0.01em;
+    }
+
+    .footer-nav {
+      display: flex;
+      justify-content: center;
+      gap: 36px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .footer-nav a {
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+      font-weight: 300;
+    }
+    .footer-nav a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      font-weight: 300;
+    }
+
+    /* ═══════════════════════════════
+       NAV
+    ═══════════════════════════════ */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 0 36px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(240,232,216,0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line-light);
+      transition: opacity 0.3s;
+    }
+    @media (max-width: 768px) { .nav { padding: 0 24px; } }
+
+    .nav-brand {
+      font-family: var(--font-serif);
+      font-size: 16px;
+      font-style: italic;
+      font-weight: 300;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+    @media (max-width: 640px) { .nav-links { gap: 16px; } }
+
+    .nav-links a {
+      font-size: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      font-weight: 400;
+    }
+    .nav-links a:hover {
+      color: var(--accent);
+    }
+
+    /* push hero content down below fixed nav */
+    .hero {
+      padding-top: 60px;
+    }
+
+    @media (max-width: 480px) {
+      .hero { padding: 60px 24px 40px; }
+      .nav-links a { font-size: 9px; letter-spacing: 1.5px; }
+    }
+
+    /* ═══════════════════════════════
+       DRAW SVG ANIMATION (方案二)
+    ═══════════════════════════════ */
+    .draw-svg path,
+    .draw-svg circle,
+    .draw-svg ellipse,
+    .draw-svg line {
+      stroke-dasharray: 1000;
+      stroke-dashoffset: 1000;
+      transition: stroke-dashoffset 1.4s cubic-bezier(0.25,0.1,0.1,1);
+    }
+    .draw-svg.drawn path,
+    .draw-svg.drawn circle,
+    .draw-svg.drawn ellipse,
+    .draw-svg.drawn line {
+      stroke-dashoffset: 0;
+    }
+
+    /* ═══════════════════════════════
+       MAGNETIC FOLLOW (方案四)
+    ═══════════════════════════════ */
+    .product-visual {
+      cursor: default;
+    }
+    .product-visual .icon-svg {
+      transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+      will-change: transform;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════ NAV ═══════════ -->
+  <nav class="nav">
+    <a href="#top" class="nav-brand">Slightly</a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#colors">Colours</a></li>
+      <li><a href="#how">Process</a></li>
+      <li><a href="#products">Shop</a></li>
+      <li><a href="#moment">Daily</a></li>
+    </ul>
+  </nav>
+
+  <!-- ═══════════ HERO ═══════════ -->
+  <section class="hero" id="top">
+    <div class="hero-orb hero-orb--1"></div>
+    <div class="hero-orb hero-orb--2"></div>
+    <div class="hero-orb hero-orb--3"></div>
+    <div class="hero-content">
+      <div class="hero-label reveal">Flower &amp; Fruit Tea</div>
+      <h1 class="hero-title">Slightly</h1>
+      <p class="hero-tagline reveal r2">Today, what flavour are you?</p>
+      <a href="#about" class="hero-cta reveal r3">
+        <span>Begin</span>
+        <span class="arrow">→</span>
+      </a>
+      <div class="hero-scroll">
+        <span>Scroll</span>
+        <div class="hero-scroll-line"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ ABOUT ═══════════ -->
+  <section id="about" class="about">
+    <div class="container">
+      <div class="section-header reveal">
+        <div>
+          <div class="section-label">Concept</div>
+          <h2 class="section-title">Slightly is not a tea brand.<br>It is a daily ritual.</h2>
+        </div>
+        <p class="section-desc">A two-minute check-in with yourself. Your mood finds its colour, its flavour, its quiet moment.</p>
+      </div>
+
+      <div class="about-grid">
+        <div class="about-item reveal r1">
+          <div class="icon-wrap">
+            <svg class="icon-svg draw-svg" viewBox="0 0 44 44" stroke="currentColor">
+              <ellipse cx="22" cy="26" rx="12" ry="9" stroke-width="0.7"/>
+              <circle cx="22" cy="15" r="7" stroke-width="0.7"/>
+              <path d="M17 14 Q20 12, 22 14 Q24 12, 27 14" stroke-width="0.8"/>
+              <path d="M18 18 Q22 20, 26 18" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <h3>Diagnose your mood</h3>
+          <p>Gentle questions about your season, your energy, your heart. Not &ldquo;which tea?&rdquo; — &ldquo;how are you right now?&rdquo;</p>
+        </div>
+
+        <div class="about-item reveal r2">
+          <div class="icon-wrap">
+            <svg class="icon-svg draw-svg" viewBox="0 0 44 44" stroke="currentColor">
+              <path d="M22 8 Q13 8, 10 17 Q7 26, 22 34 Q37 26, 34 17 Q31 8, 22 8" stroke-width="0.7"/>
+              <circle cx="22" cy="22" r="5" fill="currentColor" opacity="0.12"/>
+              <path d="M28 16 Q30 14, 31 16" stroke-width="0.7"/>
+              <path d="M13 21 Q11 23, 13 25" stroke-width="0.7"/>
+            </svg>
+          </div>
+          <h3>Your colour, your blend</h3>
+          <p>Mood maps to colour. Colour maps to a handcrafted tea-fruit combination. The system chooses; you simply enjoy.</p>
+        </div>
+
+        <div class="about-item reveal r3">
+          <div class="icon-wrap">
+            <svg class="icon-svg draw-svg" viewBox="0 0 44 44" stroke="currentColor">
+              <path d="M11 16 L11 34 Q22 30, 33 34 L33 16 Q22 20, 11 16" stroke-width="0.7"/>
+              <path d="M11 16 L11 34 Q22 30, 33 34 L33 16 Q22 20, 11 16" stroke-width="0.3" transform="translate(0,3)"/>
+              <line x1="22" y1="16" x2="22" y2="30" stroke-width="0.7"/>
+              <path d="M16 22 L20 22" stroke-width="0.6"/>
+              <path d="M16 26 L24 26" stroke-width="0.6"/>
+              <path d="M16 30 L22 30" stroke-width="0.6"/>
+            </svg>
+          </div>
+          <h3>Archive the day</h3>
+          <p>Every diagnosis saved — a colour-coded diary of how you felt. Your story, one shade at a time.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ PALETTE ═══════════ -->
+  <section id="colors" class="palette">
+    <div class="container">
+      <div class="section-header reveal">
+        <div>
+          <div class="section-label">Colours</div>
+          <h2 class="section-title">Mood palette</h2>
+        </div>
+        <p class="section-desc">Eight colours, eight moods. Each one a quiet feeling translated into flower, fruit and tea.</p>
+      </div>
+
+      <div class="palette-grid">
+        <div class="palette-item reveal r1" data-index="0">
+          <div class="palette-swatch" style="background:var(--peach)"></div>
+          <div class="palette-name">Peach Oolong</div>
+          <div class="palette-sub">Escape</div>
+        </div>
+        <div class="palette-item reveal r2" data-index="1">
+          <div class="palette-swatch" style="background:var(--pear)"></div>
+          <div class="palette-name">Pear Osmanthus</div>
+          <div class="palette-sub">Drift</div>
+        </div>
+        <div class="palette-item reveal r3" data-index="2">
+          <div class="palette-swatch" style="background:var(--rose)"></div>
+          <div class="palette-name">Rose Roselle</div>
+          <div class="palette-sub">Tenderness</div>
+        </div>
+        <div class="palette-item reveal r4" data-index="3">
+          <div class="palette-swatch" style="background:var(--jasmine)"></div>
+          <div class="palette-name">Grapefruit Jasmine</div>
+          <div class="palette-sub">Recharge</div>
+        </div>
+        <div class="palette-item reveal r1" data-index="4">
+          <div class="palette-swatch" style="background:var(--hawthorn)"></div>
+          <div class="palette-name">Tangerine Hawthorn</div>
+          <div class="palette-sub">Settle</div>
+        </div>
+        <div class="palette-item reveal r2" data-index="5">
+          <div class="palette-swatch" style="background:var(--ginger)"></div>
+          <div class="palette-name">Red Date Ginger</div>
+          <div class="palette-sub">Warmth</div>
+        </div>
+        <div class="palette-item reveal r3" data-index="6">
+          <div class="palette-swatch" style="background:var(--mint)"></div>
+          <div class="palette-name">Mint Oolong</div>
+          <div class="palette-sub">Breathe</div>
+        </div>
+        <div class="palette-item reveal r4" data-index="7">
+          <div class="palette-swatch" style="background:var(--violet)"></div>
+          <div class="palette-name">Roselle Dream</div>
+          <div class="palette-sub">Dream</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ PROCESS ═══════════ -->
+  <section id="how" class="process">
+    <div class="container">
+      <div class="section-header reveal">
+        <div>
+          <div class="section-label">Process</div>
+          <h2 class="section-title">How it works</h2>
+        </div>
+        <p class="section-desc">From how you feel to what you brew — three quiet steps.</p>
+      </div>
+
+      <div class="process-steps">
+        <div class="process-step reveal r1">
+          <div class="process-top">
+            <svg class="icon-svg icon-svg-sm draw-svg" viewBox="0 0 34 34" stroke="currentColor">
+              <circle cx="17" cy="17" r="11" stroke-width="0.7"/>
+              <path d="M11 17 L15 21 L23 13" stroke-width="0.9"/>
+            </svg>
+            <span class="process-num">01</span>
+          </div>
+          <h3>Check in</h3>
+          <p>Two minutes, a few simple questions about your season, your energy, your mood. No right or wrong — just honest.</p>
+        </div>
+
+        <div class="process-step reveal r2">
+          <div class="process-top">
+            <svg class="icon-svg icon-svg-sm draw-svg" viewBox="0 0 34 34" stroke="currentColor">
+              <path d="M17 9 Q11 6, 8 12 Q5 18, 17 26 Q29 18, 26 12 Q23 6, 17 9" stroke-width="0.7"/>
+              <path d="M13 15 L17 19 L23 11" stroke-width="0.5" opacity="0.4"/>
+            </svg>
+            <span class="process-num">02</span>
+          </div>
+          <h3>Get matched</h3>
+          <p>Your colour, your blend. A tea base, a fruit companion, and a quiet word meant only for you.</p>
+        </div>
+
+        <div class="process-step reveal r3">
+          <div class="process-top">
+            <svg class="icon-svg icon-svg-sm draw-svg" viewBox="0 0 34 34" stroke="currentColor">
+              <path d="M10 14 Q12 10, 17 10 Q22 10, 24 14 L24 26 Q22 30, 17 30 Q12 30, 10 26 Z" stroke-width="0.7"/>
+              <path d="M10 18 L24 18" stroke-width="0.7"/>
+              <path d="M13 12 L17 10 L21 12" stroke-width="0.5"/>
+              <path d="M28 16 L30 16 Q32 16, 32 20 Q32 24, 28 24 L26 24" stroke-width="0.5"/>
+            </svg>
+            <span class="process-num">03</span>
+          </div>
+          <h3>Enjoy &amp; archive</h3>
+          <p>Brew it, sip it, save the moment. Your diary grows one colour at a time — a quiet record of your days.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ PRODUCTS ═══════════ -->
+  <section id="products" class="products">
+    <div class="container">
+      <div class="section-header reveal">
+        <div>
+          <div class="section-label">Shop</div>
+          <h2 class="section-title">Choose your ritual</h2>
+        </div>
+        <p class="section-desc">From a single moment to a season of surprise.</p>
+      </div>
+
+      <div class="products-grid">
+        <div class="product reveal r1">
+          <div class="product-visual">
+            <svg class="icon-svg icon-svg-lg draw-svg" viewBox="0 0 52 52" stroke="currentColor">
+              <path d="M18 16 Q18 12, 26 12 Q34 12, 34 16 L34 32 Q34 36, 26 36 Q18 36, 18 32 Z" stroke-width="0.7"/>
+              <path d="M18 20 L34 20" stroke-width="0.7"/>
+              <path d="M22 24 Q24 24, 24 26 Q24 28, 22 28" stroke-width="0.5"/>
+              <path d="M28 24 Q30 24, 30 26 Q30 28, 28 28" stroke-width="0.5"/>
+              <line x1="26" y1="36" x2="26" y2="42" stroke-width="0.7"/>
+              <path d="M20 42 L32 42" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <h3>Today&rsquo;s Pack</h3>
+          <div class="product-prod-sub">One tea base + fruit companion</div>
+          <p>Chosen for today&rsquo;s mood. A fresh surprise every time.</p>
+          <div class="product-price">$5.90 <small>/ pack</small></div>
+          <a href="#" class="product-cta">
+            <span>Try today</span>
+            <span>→</span>
+          </a>
+        </div>
+
+        <div class="product reveal r2">
+          <div class="product-visual">
+            <svg class="icon-svg icon-svg-lg draw-svg" viewBox="0 0 52 52" stroke="currentColor">
+              <path d="M14 18 L14 40 Q14 42, 26 42 Q38 42, 38 40 L38 18" stroke-width="0.7"/>
+              <path d="M14 18 L38 18" stroke-width="0.7"/>
+              <path d="M16 24 L22 24" stroke-width="0.5"/>
+              <path d="M16 30 L24 30" stroke-width="0.5"/>
+              <path d="M28 24 L36 24" stroke-width="0.5"/>
+              <path d="M28 30 L36 30" stroke-width="0.5"/>
+              <path d="M18 10 Q22 6, 26 12 Q30 6, 34 10" stroke-width="0.7"/>
+            </svg>
+          </div>
+          <h3>Weekly Surprise</h3>
+          <div class="product-prod-sub">Seven days, seven colours</div>
+          <p>7 blind-box packs — one for each day. Open to discover your mood, one sip at a time.</p>
+          <div class="product-price">$32.90 <small>/ box</small></div>
+          <a href="#" class="product-cta">
+            <span>Get surprised</span>
+            <span>→</span>
+          </a>
+        </div>
+
+        <div class="product reveal r3">
+          <div class="product-visual">
+            <svg class="icon-svg icon-svg-lg draw-svg" viewBox="0 0 52 52" stroke="currentColor">
+              <path d="M14 16 L14 38 Q14 40, 26 38 Q38 40, 38 38 L38 16" stroke-width="0.7"/>
+              <path d="M14 22 L38 22" stroke-width="0.7"/>
+              <path d="M18 28 L20 28" stroke-width="0.5"/>
+              <path d="M22 28 L24 28" stroke-width="0.5"/>
+              <path d="M26 28 L28 28" stroke-width="0.5"/>
+              <path d="M30 28 L34 28" stroke-width="0.5"/>
+              <path d="M18 32 L24 32" stroke-width="0.5"/>
+              <path d="M28 32 L34 32" stroke-width="0.5"/>
+              <path d="M38 16 L40 14 Q42 12, 44 14 L44 22 Q42 24, 40 22 L38 22" stroke-width="0.5"/>
+            </svg>
+          </div>
+          <h3>Gift Diary Box</h3>
+          <div class="product-prod-sub">For someone worth archiving</div>
+          <p>14 packs + a journal + colour cards. A complete ritual to give — or keep for yourself.</p>
+          <div class="product-price">$49.90 <small>/ box</small></div>
+          <a href="#" class="product-cta">
+            <span>Give the ritual</span>
+            <span>→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ MOMENT ═══════════ -->
+  <section id="moment" class="moment">
+    <div class="container">
+      <div class="section-header reveal" style="margin-bottom:80px;">
+        <div>
+          <div class="section-label">Daily</div>
+          <h2 class="section-title">Today&rsquo;s moment</h2>
+        </div>
+        <p class="section-desc">Every diagnosis ends with a card — a colour, a quote, a memory to keep.</p>
+      </div>
+
+      <div class="moment-grid">
+        <div class="moment-card reveal r1">
+          <div class="moment-dot" style="background:var(--peach)"></div>
+          <div class="moment-flavor">Peach Oolong</div>
+          <span class="moment-color">#D48A5A / Escape</span>
+          <p class="moment-quote">&ldquo;An autumn afternoon at your desk, a cup of peach oolong is the best escape. Just five minutes.&rdquo;</p>
+          <div class="moment-date">Slightly · 2026.07.19</div>
+        </div>
+        <div class="moment-card reveal r2">
+          <div class="moment-dot" style="background:var(--rose)"></div>
+          <div class="moment-flavor">Rose Roselle</div>
+          <span class="moment-color">#C48A96 / Tenderness</span>
+          <p class="moment-quote">&ldquo;Today you are allowed to be soft. A cup of rose and roselle, quiet and warm.&rdquo;</p>
+          <div class="moment-date">Slightly · 2026.07.18</div>
+        </div>
+        <div class="moment-card reveal r3">
+          <div class="moment-dot" style="background:var(--mint)"></div>
+          <div class="moment-flavor">Mint Oolong</div>
+          <span class="moment-color">#8AA88A / Breathe</span>
+          <p class="moment-quote">&ldquo;Held it in all day. Finally — a breath. Mint and oolong, clean and clear.&rdquo;</p>
+          <div class="moment-date">Slightly · 2026.07.17</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ MOOD OVERLAY ═══════════ -->
+  <div class="mood-overlay" id="moodOverlay">
+    <div class="mood-overlay-bg" id="moodOverlayBg"></div>
+    <div class="mood-overlay-card">
+      <button class="mood-overlay-close" id="moodOverlayClose">✕</button>
+      <div class="mood-overlay-swatch" id="moodOverlaySwatch"></div>
+      <div class="mood-overlay-name" id="moodOverlayName"></div>
+      <span class="mood-overlay-hex" id="moodOverlayHex"></span>
+      <span class="mood-overlay-tag" id="moodOverlayTag"></span>
+      <p class="mood-overlay-quote" id="moodOverlayQuote"></p>
+      <div class="mood-overlay-recipe" id="moodOverlayRecipe"></div>
+      <button class="mood-overlay-apply" id="moodOverlayApply">Immerse in this mood</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <footer>
+    <div class="footer-brand">Slightly</div>
+    <div class="footer-nav">
+      <a href="#top">Home</a>
+      <a href="#about">Concept</a>
+      <a href="#colors">Colours</a>
+      <a href="#how">Process</a>
+      <a href="#products">Shop</a>
+    </div>
+    <p class="footer-copy">&copy; 2026 Slightly — Flower &amp; Fruit Tea</p>
+  </footer>
+
+  <script>
+    (function() {
+      // ── mood data ──
+      var moodData = [
+        { name: 'Peach Oolong',      hex: '#D48A5A', hexVar: '--peach',     tag: 'Escape',
+          quote: '"An autumn afternoon at your desk, a cup of peach oolong is the best escape. Just five minutes."',
+          recipe: 'Oolong base · Peach slices · Apple chips' },
+        { name: 'Pear Osmanthus',    hex: '#D4C4A8', hexVar: '--pear',      tag: 'Drift',
+          quote: '"Let the scent carry you nowhere. Pear and osmanthus, soft as a daydream."',
+          recipe: 'White tea · Pear slices · Osmanthus flower' },
+        { name: 'Rose Roselle',      hex: '#C48A96', hexVar: '--rose',      tag: 'Tenderness',
+          quote: '"Today you are allowed to be soft. A cup of rose and roselle, quiet and warm."',
+          recipe: 'Green tea · Rose buds · Roselle petals' },
+        { name: 'Grapefruit Jasmine',hex: '#D4C06A', hexVar: '--jasmine',   tag: 'Recharge',
+          quote: '"Bright like morning citrus. Jasmine and grapefruit — a gentle reset."',
+          recipe: 'Jasmine green tea · Grapefruit peel · Honey crystals' },
+        { name: 'Tangerine Hawthorn',hex: '#B86054', hexVar: '--hawthorn',  tag: 'Settle',
+          quote: '"Sour, sharp, settling. Tangerine hawthorn cuts through the noise."',
+          recipe: 'Black tea · Tangerine peel · Hawthorn berry' },
+        { name: 'Red Date Ginger',   hex: '#9A7054', hexVar: '--ginger',    tag: 'Warmth',
+          quote: '"Warmth you never have to ask for. Red date and ginger, deep and slow."',
+          recipe: 'Pu-erh · Red date · Ginger slices' },
+        { name: 'Mint Oolong',       hex: '#8AA88A', hexVar: '--mint',      tag: 'Breathe',
+          quote: '"Held it in all day. Finally — a breath. Mint and oolong, clean and clear."',
+          recipe: 'Oolong base · Mint leaves · Green tea pearls' },
+        { name: 'Roselle Dream',     hex: '#B890B8', hexVar: '--violet',    tag: 'Dream',
+          quote: '"Late and lovely. Roselle and lavender — a quiet lullaby in a cup."',
+          recipe: 'Herbal base · Roselle · Lavender buds' }
+      ];
+
+      // ── cache DOM refs ──
+      var overlay   = document.getElementById('moodOverlay');
+      var bg        = document.getElementById('moodOverlayBg');
+      var swatch    = document.getElementById('moodOverlaySwatch');
+      var nameEl    = document.getElementById('moodOverlayName');
+      var hexEl     = document.getElementById('moodOverlayHex');
+      var tagEl     = document.getElementById('moodOverlayTag');
+      var quoteEl   = document.getElementById('moodOverlayQuote');
+      var recipeEl  = document.getElementById('moodOverlayRecipe');
+      var closeBtn  = document.getElementById('moodOverlayClose');
+      var applyBtn  = document.getElementById('moodOverlayApply');
+
+      var originalBg = window.getComputedStyle(document.body).background;
+      var themeApplied = false;
+
+      // ── open ──
+      function openMood(index) {
+        var d = moodData[index];
+        if (!d) return;
+        var color = d.hex;
+
+        swatch.style.background = color;
+        nameEl.textContent = d.name;
+        hexEl.textContent = d.hex;
+        tagEl.textContent = d.tag;
+        quoteEl.textContent = d.quote;
+        recipeEl.textContent = d.recipe;
+
+        bg.style.background = color.replace(')', ',0.15)').replace('rgb', 'rgba');
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        themeApplied = false;
+      }
+
+      // ── close ──
+      function closeMood() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        if (themeApplied) {
+          document.body.style.background = originalBg;
+          themeApplied = false;
+        }
+      }
+
+      // ── apply mood to page ──
+      function applyMood(index) {
+        var d = moodData[index];
+        if (!d) return;
+        var color = d.hex;
+        // gently tint the page canvas
+        document.body.style.background =
+          'radial-gradient(ellipse at 50% 40%, ' + color + '22 0%, transparent 60%), ' +
+          'radial-gradient(ellipse at 80% 80%, ' + color + '11 0%, transparent 50%), ' +
+          'var(--canvas)';
+        themeApplied = true;
+        closeMood();
+      }
+
+      // ── bind palette clicks ──
+      document.querySelectorAll('.palette-item').forEach(function(el) {
+        el.addEventListener('click', function() {
+          var idx = parseInt(this.getAttribute('data-index'), 10);
+          if (!isNaN(idx)) openMood(idx);
+        });
+      });
+
+      // ── close events ──
+      closeBtn.addEventListener('click', closeMood);
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay || e.target === bg) closeMood();
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMood();
+      });
+
+      // ── apply button ──
+      applyBtn.addEventListener('click', function() {
+        var name = nameEl.textContent;
+        var idx = moodData.findIndex(function(d) { return d.name === name; });
+        if (idx >= 0) applyMood(idx);
+      });
+
+      // ── SVG draw animation ──
+      var drawEls = document.querySelectorAll('.draw-svg');
+      if ('IntersectionObserver' in window) {
+        var drawObs = new IntersectionObserver(function(es) {
+          es.forEach(function(e) {
+            if (e.isIntersecting) {
+              e.target.classList.add('drawn');
+              drawObs.unobserve(e.target);
+            }
+          });
+        }, { threshold: 0.15 });
+        drawEls.forEach(function(el) { drawObs.observe(el); });
+      } else {
+        drawEls.forEach(function(el) { el.classList.add('drawn'); });
+      }
+
+      // ── magnetic follow on product icons ──
+      document.querySelectorAll('.product-visual').forEach(function(vis) {
+        var icon = vis.querySelector('.icon-svg');
+        if (!icon) return;
+
+        var bound, centerX, centerY;
+
+        function updateBounds() {
+          bound = vis.getBoundingClientRect();
+          centerX = bound.left + bound.width / 2;
+          centerY = bound.top + bound.height / 2;
+        }
+
+        vis.addEventListener('mouseenter', updateBounds);
+
+        vis.addEventListener('mousemove', function(e) {
+          updateBounds();
+          var dx = e.clientX - centerX;
+          var dy = e.clientY - centerY;
+          var dist = Math.sqrt(dx*dx + dy*dy);
+          var maxDist = Math.max(bound.width, bound.height) * 0.7;
+          var strength = Math.min(dist / maxDist, 1);
+          var pull = strength * 10;
+          var angle = Math.atan2(dy, dx);
+          var tx = Math.cos(angle) * pull;
+          var ty = Math.sin(angle) * pull;
+          icon.style.transform = 'translate(' + tx.toFixed(1) + 'px, ' + ty.toFixed(1) + 'px)';
+        });
+
+        vis.addEventListener('mouseleave', function() {
+          icon.style.transform = 'translate(0, 0)';
+        });
+      });
+
+      // ── scroll reveal ──
+      var els = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function(es) {
+          es.forEach(function(e) {
+            if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+          });
+        }, { threshold: 0.06, rootMargin: '0px 0px -40px 0px' });
+        els.forEach(function(el) { obs.observe(el); });
+      } else {
+        els.forEach(function(el) { el.classList.add('visible'); });
+      }
+
+      // ── smooth scroll ──
+      document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+        a.addEventListener('click', function(e) {
+          var t = document.querySelector(this.getAttribute('href'));
+          if (t) {
+            e.preventDefault();
+            var top = t.getBoundingClientRect().top + window.pageYOffset - 60;
+            window.scrollTo({ top: top, behavior: 'smooth' });
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
